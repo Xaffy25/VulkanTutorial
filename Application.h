@@ -6,14 +6,39 @@
 #include <vector>
 #include <stdexcept>
 #include <iostream>
+#include <optional>
+
+struct QueueFamilyIndices {
+	std::optional<uint32_t> graphicsFamily;
+
+	bool isComplete()
+	{
+		return graphicsFamily.has_value();
+	}
+};
+
 
 class Application {
 public:
-	void run();
+	void run()
+	{
+		initWindow();
+		initVulkan();
+		mainLoop();
+		cleanup();
+	}
 
 private:
+
+	void initVulkan()
+	{
+		createInstance();
+		SetupDebugMessenger();
+		pickPhysicalDevice();
+		createLogicalDevice();
+	}
+
 	void initWindow();
-	void initVulkan();
 	void mainLoop();
 	void cleanup();
 
@@ -25,7 +50,10 @@ private:
 
 	GLFWwindow* window;
 	VkInstance instance;
-	
+	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	VkDevice device;
+	VkQueue graphicsQueue;
+
 	VkDebugUtilsMessengerEXT debugMessenger;
 	void SetupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
@@ -53,4 +81,11 @@ private:
 
 		return VK_FALSE;
 	}
+
+
+	void pickPhysicalDevice();
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+	void createLogicalDevice();
+
 };

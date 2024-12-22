@@ -3,9 +3,14 @@
 #include <GLFW/glfw3.h>
 
 #include <vulkan/vulkan.h>
+
+
+
+
 #include <vector>
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
 #include <optional>
 #include <set>
 #include <cstdint>
@@ -54,10 +59,17 @@ private:
 		createLogicalDevice();
 		CreateSwapChain();
 		createImageViews();
+		createRenderPass();
+		createGraphicsPipeline();
+		createFramebuffers();
+		createCommandPool();
+		createCommandBuffer();
+		createSyncObjects();
 	}
 
 	void initWindow();
 	void mainLoop();
+	void drawFrame();
 	void cleanup();
 
 	void createInstance();
@@ -70,9 +82,19 @@ private:
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
-	
+
 	VkQueue graphicsQueue;
 	VkQueue presentQueue;
+
+	VkRenderPass renderPass;
+	VkPipelineLayout pipelineLayout;
+	VkPipeline graphicsPipeline;
+	void createGraphicsPipeline();
+	VkShaderModule createShaderModule(const std::vector<char>& code);
+	void createRenderPass();
+
+	std::vector<VkFramebuffer> swapChainFramebuffers;
+	void createFramebuffers();
 
 	VkSwapchainKHR swapChain;
 	std::vector<VkImage> swapChainImages;
@@ -131,5 +153,15 @@ private:
 	bool isDeviceSuitable(VkPhysicalDevice device);
 	void createLogicalDevice();
 
+	VkCommandPool commandPool;
+	void createCommandPool();
 
+	VkCommandBuffer commandBuffer;
+	void createCommandBuffer();
+	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore renderFinishedSemaphore;
+	VkFence inFlightFence;
+	void createSyncObjects();
 };

@@ -7,13 +7,28 @@
 #include <stdexcept>
 #include <iostream>
 #include <optional>
+#include <set>
+#include <cstdint>
+#include <limits>
+#include <algorithm>
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
-
+	std::optional<uint32_t> presentFamily;
 	bool isComplete()
 	{
-		return graphicsFamily.has_value();
+		return graphicsFamily.has_value() && presentFamily.has_value();
+	}
+};
+
+struct SwapChainSupportDetails
+{
+	VkSurfaceCapabilitiesKHR capabilities;
+	std::vector<VkSurfaceFormatKHR> formats;
+	std::vector<VkPresentModeKHR> presentModes;
+	bool isAdequate()
+	{
+		return !formats.empty() && !presentModes.empty();
 	}
 };
 
@@ -34,8 +49,11 @@ private:
 	{
 		createInstance();
 		SetupDebugMessenger();
+		createSurface();
 		pickPhysicalDevice();
 		createLogicalDevice();
+		CreateSwapChain();
+		createImageViews();
 	}
 
 	void initWindow();
@@ -52,7 +70,27 @@ private:
 	VkInstance instance;
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device;
+	
 	VkQueue graphicsQueue;
+	VkQueue presentQueue;
+
+	VkSwapchainKHR swapChain;
+	std::vector<VkImage> swapChainImages;
+	std::vector<VkImageView> swapChainImagesViews;
+ 	VkFormat swapChainImageFormat;
+	VkExtent2D swapChainExtent;
+
+	void createImageViews();
+
+	VkSurfaceKHR surface;
+	void createSurface();
+
+	void CreateSwapChain();
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& avilableFormats);
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
 	VkDebugUtilsMessengerEXT debugMessenger;
 	void SetupDebugMessenger();
@@ -63,6 +101,10 @@ private:
 	const std::vector<const char*> validationLayers =
 	{
 		"VK_LAYER_KHRONOS_validation"
+	};
+
+	const std::vector<const char*> deviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 
 	#pragma region validation layers
@@ -85,7 +127,9 @@ private:
 
 	void pickPhysicalDevice();
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+	bool isDeviceSuitable(VkPhysicalDevice device);
 	void createLogicalDevice();
+
 
 };

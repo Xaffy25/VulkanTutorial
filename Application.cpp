@@ -1099,12 +1099,47 @@ void Application::recreateSwapChain()
 	createFramebuffers();
 }
 
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+int frames = 0;
+float t = 0;
+float fps = 60.0f;
+
+
 void Application::mainLoop()
 {
+	std::string title = "vulkan";
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
+		
+		frames++;
+		
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
 		drawFrame();
+		if (t >= 1.0f)
+		{
+			fps = frames / deltaTime;
+			t -= 1.0f;
+		}
+		else
+		{
+			t += deltaTime;
+		}
+		float f = 0.0f;
+		char title[256];
+		title[255] = '\0';
+
+		snprintf(title, 255,
+			"%s %s - [fps: %.3f , ms: %.4f]",
+			"VULKAN TUTORIAL ", "0.1", fps, 1000.0f/fps);
+		glfwSetWindowTitle(window, title);
+		frames = 0;
+		
 	}
 	 vkDeviceWaitIdle(device);
 }

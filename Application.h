@@ -4,10 +4,10 @@
 
 #include <vulkan/vulkan.h>
 
-
-
+#include <glm/glm.hpp>
 
 #include <vector>
+#include <array>
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
@@ -16,6 +16,52 @@
 #include <cstdint>
 #include <limits>
 #include <algorithm>
+
+struct Vertex
+{
+	glm::vec2 pos;
+	glm::vec3 color;
+
+	static VkVertexInputBindingDescription getBindingDescription()
+	{
+		VkVertexInputBindingDescription bindingDescription{};
+
+		bindingDescription.binding = 0;
+		bindingDescription.stride = sizeof(Vertex);
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		
+		return bindingDescription;
+	}
+	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+	{
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].location = 0;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[1].location = 1;
+		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+		return attributeDescriptions;
+	}
+};
+
+const std::vector<Vertex> vertices = 
+{
+	{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> indices =
+{
+	0,1,2,2,3,0
+};
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
@@ -47,7 +93,7 @@ public:
 		mainLoop();
 		cleanup();
 	}
-
+	bool framebufferResized = false;
 private:
 
 	void initVulkan()
@@ -63,10 +109,14 @@ private:
 		createGraphicsPipeline();
 		createFramebuffers();
 		createCommandPool();
-		createCommandBuffer();
+		createVertexBuffer();
+		createIndexBuffer();
+		createCommandBuffers();
 		createSyncObjects();
 	}
 
+	void recreateSwapChain();
+	void cleanupSwapChain();
 	void initWindow();
 	void mainLoop();
 	void drawFrame();
@@ -77,6 +127,7 @@ private:
 	bool checkValidationLayerSupport();
 	std::vector<const char*> getRequiredExtensions();
 
+	const int MAX_FRAMES_IN_FLIGHT = 2;
 
 	GLFWwindow* window;
 	VkInstance instance;
@@ -117,8 +168,8 @@ private:
 	VkDebugUtilsMessengerEXT debugMessenger;
 	void SetupDebugMessenger();
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-	const uint32_t WIDTH = 800;
-	const uint32_t HEIGHT = 600;
+	const uint32_t WIDTH = 1600;
+	const uint32_t HEIGHT = 900;
 
 	const std::vector<const char*> validationLayers =
 	{
@@ -156,12 +207,24 @@ private:
 	VkCommandPool commandPool;
 	void createCommandPool();
 
-	VkCommandBuffer commandBuffer;
-	void createCommandBuffer();
+	std::vector<VkCommandBuffer> commandBuffers;
+	void createCommandBuffers();
 	void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
-	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore renderFinishedSemaphore;
-	VkFence inFlightFence;
+	std::vector<VkSemaphore> imageAvailableSemaphores;
+	std::vector<VkSemaphore> renderFinishedSemaphores;
+	std::vector<VkFence> inFlightFences;
+
 	void createSyncObjects();
+
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void createVertexBuffer();
+	void createIndexBuffer();
+	VkBuffer vertexBuffer;
+	VkDeviceMemory vertexBufferMemory;
+	VkBuffer indexBuffer;
+	VkDeviceMemory indexBufferMemory;
+
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 };

@@ -4,8 +4,11 @@
 
 #include <vulkan/vulkan.h>
 
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
+#include <chrono>
 #include <vector>
 #include <array>
 #include <stdexcept>
@@ -16,6 +19,13 @@
 #include <cstdint>
 #include <limits>
 #include <algorithm>
+
+struct UniformBufferObject
+{
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
 
 struct Vertex
 {
@@ -99,18 +109,30 @@ private:
 	void initVulkan()
 	{
 		createInstance();
+
 		SetupDebugMessenger();
+
 		createSurface();
+
 		pickPhysicalDevice();
 		createLogicalDevice();
+
 		CreateSwapChain();
 		createImageViews();
 		createRenderPass();
+
+		createDescriptorSetLayout();
 		createGraphicsPipeline();
 		createFramebuffers();
 		createCommandPool();
+
 		createVertexBuffer();
 		createIndexBuffer();
+		createUniformBuffers();
+
+		createDescriptorPool();
+		createDescriptorSets();
+
 		createCommandBuffers();
 		createSyncObjects();
 	}
@@ -119,6 +141,7 @@ private:
 	void cleanupSwapChain();
 	void initWindow();
 	void mainLoop();
+	uint32_t currentFrame;
 	void drawFrame();
 	void cleanup();
 
@@ -138,6 +161,7 @@ private:
 	VkQueue presentQueue;
 
 	VkRenderPass renderPass;
+	VkDescriptorSetLayout descriptorSetLayout;
 	VkPipelineLayout pipelineLayout;
 	VkPipeline graphicsPipeline;
 	void createGraphicsPipeline();
@@ -221,10 +245,24 @@ private:
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void createVertexBuffer();
 	void createIndexBuffer();
+	void createUniformBuffers();
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
 
+	std::vector<VkBuffer> uniformBuffers;
+	std::vector<VkDeviceMemory> uniformBuffersMemory;
+	std::vector<void*> uniformBuffersMapped;
+
+	void updateUniformBuffer(uint32_t currentImage);
+
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+
+	VkDescriptorPool descriptorPool;
+	std::vector<VkDescriptorSet> descriptorSets;
+
+	void createDescriptorSetLayout();
+	void createDescriptorPool();
+	void createDescriptorSets();
 };
